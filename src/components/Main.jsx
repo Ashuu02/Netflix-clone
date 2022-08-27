@@ -2,9 +2,15 @@ import React from "react";
 import { useState, useEffect } from "react";
 import requests from "../Requests";
 import axios from "axios";
+import { UserAuth } from '../context/AuthContext';
+import { arrayUnion, doc, updateDoc } from 'firebase/firestore';
+import { db } from '../Firebase';
+
 
 const Main = () => {
   const [movies, setMovies] = useState([]);
+  const [like, setLike] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const movie = movies[Math.floor(Math.random() * movies.length)];
 
@@ -20,6 +26,24 @@ const Main = () => {
       return str.slice(0, num) + "...";
     } else {
       return str;
+    }
+  };
+  const { user } = UserAuth();
+  const movieID = doc(db, 'users', `${user?.email}`);
+
+  const saveShow = async () => {
+    if (user?.email) {
+      setLike(!like);
+      setSaved(true);
+      await updateDoc(movieID, {
+        savedShows: arrayUnion({
+          id: movie.id,
+          title: movie.title,
+          img: movie.backdrop_path,
+        }),
+      });
+    } else {
+      alert('Please log in to save a movie');
     }
   };
 
@@ -39,7 +63,7 @@ const Main = () => {
             <button className='border bg-gray-300 text-black border-gray-300 py-2 px-5'>
               Play
             </button>
-            <button className='border text-white border-gray-300 py-2 px-5 ml-4'>
+            <button onClick={saveShow} className='border text-white border-gray-300 py-2 px-5 ml-4'>
               Watch Later
             </button>
           </div>
